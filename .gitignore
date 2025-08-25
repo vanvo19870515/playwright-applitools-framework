@@ -1,0 +1,13 @@
+# Dependencies
+/node_modules
+
+# Test results
+/test-results/
+/allure-results/
+/allure-report/
+
+# Playwright
+/playwright/.cache/
+
+# Misc
+.DS_Store

@@ -4,6 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "npx playwright test",
+    "test:api": "npx playwright test --config=api-tests/playwright.config.ts",
+    "test:ui": "npx playwright test --config=playwright.config.ts",
     "report": "npx allure serve allure-results"
   },
   "keywords": [],

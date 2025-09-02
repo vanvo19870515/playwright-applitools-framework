@@ -1,0 +1,95 @@
+{
+  "name": "Test Execution Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "/webhook/test-trigger",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "command": "cd /app && ./scripts/run-tests.sh",
+        "cwd": "/app"
+      },
+      "name": "Execute Tests",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "qa-automation@example.com",
+        "toEmail": "{{$node[\"Webhook\"].json[\"email\"] || \"qa-team@example.com\"}}",
+        "subject": "Test Execution Results",
+        "text": "Test execution completed!\n\nResults: {{$node[\"Execute Tests\"].json}}\n\nView reports at: http://localhost:5050"
+      },
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "webhookUri": "{{$node[\"Webhook\"].json[\"slack_webhook\"] || \"https://hooks.slack.com/...\"}}",
+        "text": "🧪 Test execution completed!\n📊 Results: {{$node[\"Execute Tests\"].json}}\n📈 Reports: http://localhost:5050",
+        "options": {}
+      },
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        680,
+        460
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Execute Tests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Tests": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "staticData": null,
+  "settings": {},
+  "meta": {
+    "instanceId": "n8n-instance"
+  }
+}

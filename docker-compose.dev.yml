@@ -1,0 +1,76 @@
+# ========================================
+# DEVELOPMENT ENVIRONMENT
+# ========================================
+
+version: '3.8'
+
+name: qa-automation-suite-dev
+
+services:
+  # Development n8n with hot reload
+  n8n-dev:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.n8n
+    container_name: n8n-dev
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=dev
+      - N8N_BASIC_AUTH_PASSWORD=dev123
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=development
+      - N8N_LOG_LEVEL=debug
+      - WEBHOOK_URL=http://localhost:5678/
+      - EXECUTIONS_PROCESS=main
+      - EXECUTIONS_DATA_PRUNE=false
+    volumes:
+      - ./workflows:/home/node/.n8n/workflows
+      - n8n_dev_data:/home/node/.n8n
+    networks:
+      - qa-dev-network
+
+  # PostgreSQL for development
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: postgres-dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=n8n_dev
+      - POSTGRES_USER=n8n_dev
+      - POSTGRES_PASSWORD=dev_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - qa-dev-network
+
+  # Redis for development
+  redis-dev:
+    image: redis:7-alpine
+    container_name: redis-dev
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - qa-dev-network
+
+volumes:
+  n8n_dev_data:
+    driver: local
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+
+networks:
+  qa-dev-network:
+    driver: bridge
+    name: qa-dev-network

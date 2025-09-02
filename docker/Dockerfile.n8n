@@ -1,0 +1,35 @@
+# ========================================
+# N8N WORKFLOW AUTOMATION
+# ========================================
+
+FROM n8nio/n8n:latest
+
+# Install additional tools for workflow automation
+USER root
+
+RUN apk add --no-cache \
+    curl \
+    jq \
+    git \
+    && rm -rf /var/cache/apk/*
+
+# Create workflows directory
+RUN mkdir -p /home/node/.n8n/workflows
+
+# Copy custom workflows (if any)
+COPY workflows/ /home/node/.n8n/workflows/
+
+# Set correct permissions
+RUN chown -R node:node /home/node/.n8n
+
+# Switch back to node user
+USER node
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:5678/healthz || exit 1
+
+# Expose port
+EXPOSE 5678
+
+# Default command (inherited from base image)

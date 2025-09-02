@@ -1,0 +1,54 @@
+{
+  "recommendations": [
+    // TypeScript & JavaScript
+    "ms-vscode.vscode-typescript-next",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-eslint",
+
+    // Playwright Testing
+    "ms-playwright.playwright",
+    "hbenl.vscode-test-explorer",
+
+    // Docker
+    "ms-azuretools.vscode-docker",
+    "ms-vscode-remote.remote-containers",
+
+    // API Testing & HTTP
+    "humao.rest-client",
+    "bradlc.vscode-tailwindcss",
+
+    // Git & Version Control
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+
+    // Testing & Debugging
+    "ms-vscode.test-adapter-converter",
+    "formulahendry.auto-rename-tag",
+
+    // Code Quality
+    "christian-kohler.path-intellisense",
+    "ms-vscode.vscode-json",
+    "redhat.vscode-yaml",
+
+    // Productivity
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-icons",
+    "christian-kohler.path-intellisense",
+
+    // Theme & UI
+    "ms-vscode.vscode-theme-seti",
+    "ms-vscode.vscode-icons",
+
+    // Terminal & Shell
+    "ms-vscode-remote.remote-ssh",
+    "foxgis.roslynator",
+
+    // Documentation
+    "docsmsft.docs-markdown",
+    "yzhang.markdown-all-in-one"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.vscode-typescript",
+    "hookyqr.beautify"
+  ]
+}

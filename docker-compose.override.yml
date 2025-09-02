@@ -1,0 +1,40 @@
+# ========================================
+# DOCKER COMPOSE OVERRIDE
+# ========================================
+# This file allows you to customize the main docker-compose.yml
+# without modifying the original file
+
+version: '3.8'
+
+services:
+  # Override n8n for development
+  n8n:
+    environment:
+      - N8N_LOG_LEVEL=debug
+      - N8N_EXECUTIONS_DATA_PRUNE=true
+      - N8N_EXECUTIONS_DATA_MAX_AGE=7
+    volumes:
+      - ./workflows:/home/node/.n8n/workflows:ro
+      - n8n_data:/home/node/.n8n
+
+  # Override playwright runner for debugging
+  playwright-runner:
+    environment:
+      - DEBUG=pw:api
+      - PWDEBUG=1
+    volumes:
+      - ./tests:/app/tests:ro
+      - ./pages:/app/pages:ro
+      - ./test-results:/app/test-results
+      - ./allure-results:/app/allure-results
+
+  # Development overrides
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_LOG_STATEMENT=all
+
+  redis:
+    ports:
+      - "6379:6379"

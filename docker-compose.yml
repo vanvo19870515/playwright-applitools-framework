@@ -1,0 +1,178 @@
+version: '3.8'
+
+name: qa-automation-suite
+
+services:
+  # ========================================
+  # TEST EXECUTION SERVICES
+  # ========================================
+
+  playwright-runner:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.playwright
+    container_name: playwright-runner
+    volumes:
+      - ./tests:/app/tests:ro
+      - ./pages:/app/pages:ro
+      - ./test-results:/app/test-results
+      - ./allure-results:/app/allure-results
+      - ./playwright-report:/app/playwright-report
+    environment:
+      - NODE_ENV=test
+      - APPLITOOLS_API_KEY=${APPLITOOLS_API_KEY}
+      - DISPLAY=${DISPLAY:-}
+    working_dir: /app
+    depends_on:
+      - allure-server
+    networks:
+      - qa-network
+    profiles:
+      - test
+
+  allure-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.allure
+    container_name: allure-server
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./allure-results:/app/allure-results
+    environment:
+      - CHECK_RESULTS_EVERY_SECONDS=1
+      - KEEP_HISTORY=1
+      - KEEP_HISTORY_LATEST=25
+    networks:
+      - qa-network
+    profiles:
+      - reporting
+
+  # ========================================
+  # WORKFLOW AUTOMATION
+  # ========================================
+
+  n8n:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.n8n
+    container_name: n8n-workflow
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-admin123}
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n_password
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://${N8N_HOST:-localhost}:5678/
+      - EXECUTIONS_PROCESS=main
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/home/node/.n8n/workflows
+    depends_on:
+      - postgres
+    networks:
+      - qa-network
+    profiles:
+      - workflow
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: qa-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=n8n
+      - POSTGRES_USER=n8n
+      - POSTGRES_PASSWORD=n8n_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - qa-network
+    profiles:
+      - database
+      - workflow
+
+  redis:
+    image: redis:7-alpine
+    container_name: qa-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - qa-network
+    profiles:
+      - cache
+      - workflow
+
+  # ========================================
+  # MONITORING & LOGGING
+  # ========================================
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: qa-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - qa-network
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: qa-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - qa-network
+    profiles:
+      - monitoring
+
+volumes:
+  n8n_data:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  qa-network:
+    driver: bridge
+    name: qa-automation-network
